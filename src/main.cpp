@@ -11,10 +11,11 @@
 
 #define LEDPIN 2
 
+// OLED_SDA and OLED_SCL are different from the upstream
 #define OLED_I2C_ADDR 0x3C
 #define OLED_RESET 16
-#define OLED_SDA 4
-#define OLED_SCL 15
+#define OLED_SDA 21
+#define OLED_SCL 22
 
 unsigned int counter = 0;
 char TTN_response[30];
@@ -26,17 +27,20 @@ SSD1306 display (OLED_I2C_ADDR, OLED_SDA, OLED_SCL);
 // the bytes.
 
 // Copy the value from Device EUI from the TTN console in LSB mode.
-static const u1_t PROGMEM DEVEUI[8]= { ... };
+static const u1_t PROGMEM DEVEUI[8] = {0x03, 0x04, 0x40, 0x83, 0x51, 0xA0, 0x0D, 0x00};
 void os_getDevEui (u1_t* buf) { memcpy_P(buf, DEVEUI, 8);}
 
 // Copy the value from Application EUI from the TTN console in LSB mode
-static const u1_t PROGMEM APPEUI[8]= { ... };
+static const u1_t PROGMEM APPEUI[8] = {0x73, 0x98, 0x02, 0xD0, 0x7E, 0xD5, 0xB3, 0x70};
 void os_getArtEui (u1_t* buf) { memcpy_P(buf, APPEUI, 8);}
 
 // This key should be in big endian format (or, since it is not really a
 // number but a block of memory, endianness does not really apply). In
 // practice, a key taken from ttnctl can be copied as-is. Anyway its in MSB mode.
-static const u1_t PROGMEM APPKEY[16] = { ... };
+static const u1_t PROGMEM APPKEY[16] = {0xC8, 0xE1, 0x39, 0x68, 0x66, 0x7B,
+                                         0x28, 0x91, 0x76, 0xC5, 0x88, 0x33,
+                                         0x92, 0xFD, 0xE6, 0x2C};
+
 void os_getDevKey (u1_t* buf) { memcpy_P(buf, APPKEY, 16);}
 
 static osjob_t sendjob;
@@ -112,7 +116,7 @@ void onEvent (ev_t ev) {
             // Schedule next transmission
             os_setTimedCallback(&sendjob, os_getTime()+sec2osticks(TX_INTERVAL), do_send);
             break;
-        case EV_JOINING:
+    case EV_JOINING:
             Serial.println(F("EV_JOINING: -> Joining..."));
             display.drawString(0,16 , "OTAA joining....");
             display.display();
@@ -182,15 +186,16 @@ void setup() {
     // Setting up channels should happen after LMIC_setSession, as that
     // configures the minimal channel set.
 
-    LMIC_setupChannel(0, 868100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(1, 868300000, DR_RANGE_MAP(DR_SF12, DR_SF7B), BAND_CENTI);      // g-band
-    LMIC_setupChannel(2, 868500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(3, 867100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(4, 867300000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(5, 867500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(6, 867700000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(7, 867900000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-    LMIC_setupChannel(8, 868800000, DR_RANGE_MAP(DR_FSK,  DR_FSK),  BAND_MILLI);      // g2-band
+    // LMIC_setupChannel(0, 868100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+    // LMIC_setupChannel(1, 868300000, DR_RANGE_MAP(DR_SF12, DR_SF7B), BAND_CENTI);      // g-band
+    // LMIC_setupChannel(2, 868500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+    // LMIC_setupChannel(3, 867100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+    // LMIC_setupChannel(4, 867300000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+    // LMIC_setupChannel(5, 867500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+    // LMIC_setupChannel(6, 867700000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+    // LMIC_setupChannel(7, 867900000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+    // LMIC_setupChannel(8, 868800000, DR_RANGE_MAP(DR_FSK,  DR_FSK),  BAND_MILLI);      // g2-band
+
     // TTN defines an additional channel at 869.525Mhz using SF9 for class B
     // devices' ping slots. LMIC does not have an easy way to define set this
     // frequency and support for class B is spotty and untested, so this
